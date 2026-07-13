@@ -259,7 +259,7 @@ const authOverlay = $("auth-overlay");
 initAuth(firebaseApp);
 
 watchAuth(user => {
-  if (user && user.emailVerified) {
+  if (user) {
     authOverlay.hidden = true;
     const initial = (user.displayName || user.email || "U").charAt(0).toUpperCase();
     const label = user.displayName || user.email || "User";
@@ -300,7 +300,6 @@ $("form-login").addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = $("btn-login-submit");
   const orig = btn.innerHTML;
-  $("login-err").style.color = "";
   $("login-err").textContent = "";
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Signing in…';
@@ -322,19 +321,12 @@ $("form-signup").addEventListener("submit", async (e) => {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Creating…';
   try {
-    const email = $("signup-email").value.trim();
-    await emailSignup(email, $("signup-password").value);
-    // Signup succeeded but they're signed out until they verify — send them to
-    // the login tab with a confirmation message.
-    $("tab-btn-login").click();
-    $("login-err").style.color = "var(--ok, #16a34a)";
-    $("login-err").textContent = `Verification link sent to ${email}. Verify, then sign in.`;
-    $("form-signup").reset();
+    await emailSignup($("signup-email").value.trim(), $("signup-password").value);
   } catch (err) {
     $("signup-err").textContent = err.code ? fmtAuthErr(err.code) : err.message;
+    btn.disabled = false;
+    btn.innerHTML = orig;
   }
-  btn.disabled = false;
-  btn.innerHTML = orig;
 });
 
 // Google
@@ -375,7 +367,7 @@ function fmtAuthErr(code) {
     "auth/email-already-in-use":  "Email already registered.",
     "auth/weak-password":         "Password must be at least 6 characters.",
     "auth/invalid-email":         "Invalid email address.",
-    "auth/email-not-verified":    "Email not verified — we've re-sent the link. Check your inbox.",
+    "auth/gmail-only":            "Only @gmail.com email addresses are allowed.",
     "auth/too-many-requests":     "Too many attempts — try again later.",
     "auth/network-request-failed":"Network error. Check your connection.",
     "auth/popup-closed-by-user":  "Sign-in popup was closed.",

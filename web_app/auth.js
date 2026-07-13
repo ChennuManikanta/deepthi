@@ -5,11 +5,20 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
-  sendEmailVerification,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
 let _auth = null;
+
+// Only real Gmail addresses are accepted. Rejects mani@gml.cm, typos, other domains.
+const GMAIL_RE = /^[^\s@]+@gmail\.com$/i;
+function requireGmail(email) {
+  if (!GMAIL_RE.test(email)) {
+    const err = new Error("Only @gmail.com email addresses are allowed.");
+    err.code = "auth/gmail-only";
+    throw err;
+  }
+}
 
 export function initAuth(app) {
   if (!app) return null;
@@ -29,24 +38,15 @@ export function watchAuth(cb) {
 
 export async function emailLogin(email, password) {
   if (!_auth) throw new Error("Firebase not configured — fill config.js");
+  requireGmail(email);
   const { user } = await signInWithEmailAndPassword(_auth, email, password);
-  // Block sign-in until the address is proven real via the verification link.
-  if (!user.emailVerified) {
-    await sendEmailVerification(user);
-    await signOut(_auth);
-    const err = new Error("Email not verified — we've re-sent the link. Check your inbox.");
-    err.code = "auth/email-not-verified";
-    throw err;
-  }
   return user;
 }
 
 export async function emailSignup(email, password) {
   if (!_auth) throw new Error("Firebase not configured — fill config.js");
+  requireGmail(email);
   const { user } = await createUserWithEmailAndPassword(_auth, email, password);
-  // A typo'd/fake address never receives this link, so it can never sign in.
-  await sendEmailVerification(user);
-  await signOut(_auth); // don't let unverified accounts straight into the app
   return user;
 }
 
