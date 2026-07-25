@@ -109,7 +109,7 @@ btnAnalyse.addEventListener("click", async () => {
   btnAnalyse.disabled = true;
   const originalLabel = btnAnalyse.innerHTML;
   btnAnalyse.innerHTML = '<span class="spinner"></span> Analysing…';
-  $("plan-status").innerHTML = '<div class="empty-icon"><div class="spinner big"></div></div><h3>Analysing your photo…</h3><p>Groq vision model is generating your care plan.</p>';
+  $("plan-status").innerHTML = '<div class="empty-icon"><div class="spinner big"></div></div><h3>Analysing your photo…</h3><p>Gemini vision model is generating your care plan.</p>';
   showTab("plan");
 
   const day = parseInt($("in-day").value, 10) || 0;
@@ -414,7 +414,7 @@ async function runHydrogel() {
 
   // AI analysis
   const aiOut = $("hg-ai-output");
-  aiOut.innerHTML = '<span class="spinner"></span> Asking Groq…';
+  aiOut.innerHTML = '<span class="spinner"></span> Asking Gemini…';
   try {
     const txt = await analyzeWithGroq(
       `Analyse a genipin-crosslinked gelatin hydrogel with ${p.gelatin}% gelatin, ` +
