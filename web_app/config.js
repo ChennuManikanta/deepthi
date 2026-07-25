@@ -1,5 +1,5 @@
-// Groq API key is kept server-side via the GROQ_API_KEY environment variable.
-// The browser calls /api/groq (Vercel serverless proxy) — the key is never sent to the browser.
+// Gemini API key is kept server-side via the GEMINI_API_KEY environment variable.
+// The browser calls /api/gemini (Vercel serverless proxy) — the key is never sent to the browser.
 
 export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyC3t7TdnCKokObfpnT_ScguagTjLGiyGv8",

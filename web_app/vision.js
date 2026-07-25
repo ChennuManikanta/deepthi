@@ -1,10 +1,10 @@
-// Groq Vision client — sends an image + prompt and returns a structured care plan.
+// Gemini Vision client — sends an image + prompt and returns a structured care plan.
 //
-// Uses a vision-capable Groq model. We force a JSON-only response so the UI
+// Uses a vision-capable Gemini model. We force a JSON-only response so the UI
 // can render it reliably.
 
-const ENDPOINT = "/api/groq";
-const VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+const ENDPOINT = "/api/gemini";
+const VISION_MODEL = "gemini-2.5-flash";
 
 const SYSTEM_PROMPT = `You are a wound-care educational assistant.
 You are NOT a doctor. Always advise the user to consult a clinician for anything
@@ -44,20 +44,24 @@ export async function analyseWound(imageDataUrl, userNotes = "", woundDay = 0) {
     `User notes: ${userNotes || "(none)"}.\n` +
     `Return the JSON care plan now.`;
 
+  // Split "data:image/jpeg;base64,XXXX" into mime type + raw base64 for Gemini.
+  const m = /^data:(.+?);base64,(.*)$/s.exec(imageDataUrl || "");
+  if (!m) throw new Error("Image must be a base64 data URL.");
+  const [, mimeType, b64] = m;
+
   const body = {
     model: VISION_MODEL,
-    temperature: 0.2,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+    system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: [
       {
         role: "user",
-        content: [
-          { type: "text", text: userText },
-          { type: "image_url", image_url: { url: imageDataUrl } },
+        parts: [
+          { text: userText },
+          { inline_data: { mime_type: mimeType, data: b64 } },
         ],
       },
     ],
+    generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
   };
 
   const res = await fetch(ENDPOINT, {
@@ -70,7 +74,7 @@ export async function analyseWound(imageDataUrl, userNotes = "", woundDay = 0) {
     throw new Error(`HTTP ${res.status}: ${await res.text()}`);
   }
   const data = await res.json();
-  const raw = data.choices?.[0]?.message?.content?.trim() || "";
+  const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
 
   // Parse — model is asked for pure JSON, but be defensive.
   try {
