@@ -4,6 +4,7 @@
 export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyC3t7TdnCKokObfpnT_ScguagTjLGiyGv8",
   authDomain: "deepthi-17a97.firebaseapp.com",
+  databaseURL: "https://deepthi-17a97-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "deepthi-17a97",
   storageBucket: "deepthi-17a97.firebasestorage.app",
   messagingSenderId: "1059106253333",
