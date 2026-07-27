@@ -139,14 +139,10 @@ btnAnalyse.addEventListener("click", async () => {
     const plan = await analyseWound(imageDataUrl, notes, day);
     renderPlan(plan);
     renderTimeline(plan);
-    saveAnalysis(plan, {
-      woundDay: day, userNotes: notes,
-      uid: currentUser?.uid || null,
-      email: currentUser?.email || null,
-    });
     saveReminder(plan);
     $("plan-status").hidden = true;
     $("plan-actions").hidden = false;
+    await persistAnalysis(plan, day, notes);
   } catch (e) {
     $("plan-status").innerHTML = `<div class="empty-icon">⚠️</div><h3>AI error</h3><p>${escape(e.message)}</p>`;
   } finally {
@@ -154,6 +150,30 @@ btnAnalyse.addEventListener("click", async () => {
     btnAnalyse.innerHTML = originalLabel;
   }
 });
+
+// Save the analysis to the signed-in user's account, with visible feedback.
+async function persistAnalysis(plan, day, notes) {
+  const el = $("save-status");
+  el.hidden = false;
+  el.style.color = "";
+  if (!currentUser) {
+    el.textContent = "Sign in to save this analysis to your account.";
+    return;
+  }
+  el.textContent = "Saving…";
+  try {
+    await saveAnalysis(plan, {
+      woundDay: day, userNotes: notes,
+      uid: currentUser.uid, email: currentUser.email || null,
+    });
+    el.style.color = "var(--ok, #16a34a)";
+    el.textContent = "✓ Saved to your account.";
+  } catch (e) {
+    el.style.color = "var(--danger, #e11d48)";
+    el.textContent = "Couldn't save: " + e.message;
+    console.error("Save failed:", e);
+  }
+}
 
 // ---------- Render plan ----------
 function renderPlan(plan) {
@@ -319,7 +339,7 @@ async function restoreUserData(uid) {
 }
 
 function resetPlanUI() {
-  ["card-assessment", "card-precautions", "card-meds", "card-redflags", "card-timeline", "plan-actions"]
+  ["card-assessment", "card-precautions", "card-meds", "card-redflags", "card-timeline", "plan-actions", "save-status"]
     .forEach(id => { $(id).hidden = true; });
   $("plan-status").innerHTML = planStatusInitial;
   $("plan-status").hidden = false;

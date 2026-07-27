@@ -28,24 +28,22 @@ export function initFirebase() {
 }
 
 export async function saveAnalysis(plan, meta) {
-  if (!ready || !db) return;
-  try {
-    await addDoc(collection(db, "wound_analyses"), {
-      ...meta,
-      assessment: plan.assessment || "",
-      woundType: plan.wound_type || "",
-      severity: plan.severity || "",
-      healingStage: plan.healing_stage || "",
-      precautions: plan.precautions || [],
-      otcProducts: plan.otc_products || [],
-      redFlags: plan.red_flags || [],
-      timeline14d: plan.timeline_14d || [],
-      healingCurve: plan.healing_curve || [],
-      timestamp: serverTimestamp(),
-    });
-  } catch (e) {
-    console.error("Firestore save failed:", e);
-  }
+  // Throw instead of swallowing, so the caller can tell the user if a save fails
+  // (e.g. Firestore database not created, or rules deny the write).
+  if (!ready || !db) throw new Error("Firebase not configured");
+  await addDoc(collection(db, "wound_analyses"), {
+    ...meta,
+    assessment: plan.assessment || "",
+    woundType: plan.wound_type || "",
+    severity: plan.severity || "",
+    healingStage: plan.healing_stage || "",
+    precautions: plan.precautions || [],
+    otcProducts: plan.otc_products || [],
+    redFlags: plan.red_flags || [],
+    timeline14d: plan.timeline_14d || [],
+    healingCurve: plan.healing_curve || [],
+    timestamp: serverTimestamp(),
+  });
 }
 
 // Returns the signed-in user's most recent saved analysis (shaped like a fresh
