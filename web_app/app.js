@@ -285,10 +285,7 @@ $("btn-enable-notif").addEventListener("click", async () => {
 $("btn-print").addEventListener("click", () => window.print());
 
 // ---------- Boot ----------
-const fbOk = initFirebase();
-const fbPill = $("fb-status");
-fbPill.classList.add(fbOk ? "connected" : "disabled");
-fbPill.innerHTML = `<span class="dot"></span> ${fbOk ? "Firebase connected" : "Firebase off—fill config.js"}`;
+initFirebase();
 
 if (typeof Notification !== "undefined" && Notification.permission === "granted") {
   registerSW();
