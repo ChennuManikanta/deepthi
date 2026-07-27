@@ -2,6 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp,
+  query, where, getDocs,
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 import { FIREBASE_CONFIG } from "./config.js";
@@ -44,5 +45,35 @@ export async function saveAnalysis(plan, meta) {
     });
   } catch (e) {
     console.error("Firestore save failed:", e);
+  }
+}
+
+// Returns the signed-in user's most recent saved analysis (shaped like a fresh
+// `plan`), or null. Scoped by uid so users only ever see their own data.
+export async function loadLatestAnalysis(uid) {
+  if (!ready || !db || !uid) return null;
+  try {
+    const snap = await getDocs(
+      query(collection(db, "wound_analyses"), where("uid", "==", uid))
+    );
+    if (snap.empty) return null;
+    // ponytail: client-side sort avoids a composite Firestore index; fine at personal scale.
+    const docs = snap.docs.map(d => d.data());
+    docs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+    const d = docs[0];
+    return {
+      assessment:    d.assessment,
+      wound_type:    d.woundType,
+      severity:      d.severity,
+      healing_stage: d.healingStage,
+      precautions:   d.precautions,
+      otc_products:  d.otcProducts,
+      red_flags:     d.redFlags,
+      timeline_14d:  d.timeline14d,
+      healing_curve: d.healingCurve,
+    };
+  } catch (e) {
+    console.error("Firestore load failed:", e);
+    return null;
   }
 }

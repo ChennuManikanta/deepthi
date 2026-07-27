@@ -1,5 +1,5 @@
 import { analyseWound } from "./vision.js";
-import { initFirebase, saveAnalysis, firebaseApp } from "./firebase.js";
+import { initFirebase, saveAnalysis, loadLatestAnalysis, firebaseApp } from "./firebase.js";
 import { initAuth, watchAuth, emailLogin, emailSignup, googleLogin, signOutUser } from "./auth.js";
 import {
   ensurePermission, registerSW, saveReminder,
@@ -9,6 +9,21 @@ import { HydrogelPredictor } from "./predictor.js";
 import { analyzeWithGroq } from "./groq.js";
 
 const $ = (id) => document.getElementById(id);
+
+// ---------- Splash + zoom lock ----------
+// Hide the splash once loaded (min showtime so the icon animation is visible).
+const _splash = $("splash");
+if (_splash) {
+  setTimeout(() => {
+    _splash.classList.add("hide");
+    setTimeout(() => _splash.remove(), 600);
+  }, 1400);
+}
+// Block iOS pinch-zoom (meta viewport + CSS touch-action cover Android + double-tap).
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+
+// Original "no analysis yet" markup, restored when a user has no saved data.
+const planStatusInitial = $("plan-status").innerHTML;
 
 // ---------- Tabs (sidebar + bottom nav) ----------
 const PAGE_META = {
@@ -119,7 +134,11 @@ btnAnalyse.addEventListener("click", async () => {
     const plan = await analyseWound(imageDataUrl, notes, day);
     renderPlan(plan);
     renderTimeline(plan);
-    saveAnalysis(plan, { woundDay: day, userNotes: notes });
+    saveAnalysis(plan, {
+      woundDay: day, userNotes: notes,
+      uid: currentUser?.uid || null,
+      email: currentUser?.email || null,
+    });
     saveReminder(plan);
     $("plan-status").hidden = true;
     $("plan-actions").hidden = false;
@@ -255,10 +274,12 @@ if (typeof Notification !== "undefined" && Notification.permission === "granted"
 // ---------- Auth ----------
 const GUEST_KEY = "vulnera_guest";
 const authOverlay = $("auth-overlay");
+let currentUser = null;
 
 initAuth(firebaseApp);
 
 watchAuth(user => {
+  currentUser = user || null;
   if (user) {
     authOverlay.hidden = true;
     const initial = (user.displayName || user.email || "U").charAt(0).toUpperCase();
@@ -268,6 +289,7 @@ watchAuth(user => {
     $("user-pill").hidden = false;
     $("topbar-avatar").textContent = initial;
     $("topbar-user").hidden = false;
+    restoreUserData(user.uid);
   } else if (localStorage.getItem(GUEST_KEY)) {
     authOverlay.hidden = true;
     $("user-pill").hidden = true;
@@ -278,6 +300,27 @@ watchAuth(user => {
     $("topbar-user").hidden = true;
   }
 });
+
+// Load this user's saved analysis on login; clear first so no other user's
+// data lingers when switching accounts in the same session.
+async function restoreUserData(uid) {
+  resetPlanUI();
+  const plan = await loadLatestAnalysis(uid);
+  if (!plan || currentUser?.uid !== uid) return; // ignore if user changed meanwhile
+  renderPlan(plan);
+  renderTimeline(plan);
+  $("plan-status").hidden = true;
+  $("plan-actions").hidden = false;
+}
+
+function resetPlanUI() {
+  ["card-assessment", "card-precautions", "card-meds", "card-redflags", "card-timeline", "plan-actions"]
+    .forEach(id => { $(id).hidden = true; });
+  $("plan-status").innerHTML = planStatusInitial;
+  $("plan-status").hidden = false;
+  $("timeline-status").hidden = false;
+  if (healingChart) { healingChart.destroy(); healingChart = null; }
+}
 
 // Tab switching
 $("tab-btn-login").addEventListener("click", () => {
@@ -352,6 +395,8 @@ $("btn-skip-auth").addEventListener("click", () => {
 // Sign out (sidebar + topbar)
 async function handleSignOut() {
   await signOutUser();
+  currentUser = null;
+  resetPlanUI();
   $("user-pill").hidden = true;
   $("topbar-user").hidden = true;
   authOverlay.hidden = false;

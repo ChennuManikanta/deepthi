@@ -787,3 +787,37 @@ iframe#model-frame {
 @media (min-width: 721px) {
   .dz-upload-row { display: none; }
 }
+
+/* ---------- Disable page zoom / double-tap zoom ---------- */
+html { touch-action: pan-x pan-y; -ms-touch-action: pan-x pan-y; }
+html, body { overscroll-behavior: none; }
+
+/* ========== SPLASH (app icon animation on open) ========== */
+#splash {
+  position: fixed; inset: 0; z-index: 3000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px;
+  background: var(--grad-bg);
+  opacity: 1; transition: opacity .5s ease;
+}
+#splash.hide { opacity: 0; pointer-events: none; }
+.splash-mark {
+  width: 88px; height: 88px; border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; background: var(--grad-brand);
+  box-shadow: var(--shadow-color);
+  animation: splashPop .7s cubic-bezier(.22,1,.36,1), splashPulse 1.6s .7s ease-in-out infinite;
+}
+.splash-name {
+  margin-top: 16px; font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+  background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  opacity: 0; animation: splashFade .5s .35s ease forwards;
+}
+.splash-sub {
+  font-size: 13px; color: var(--text-muted); font-weight: 500;
+  opacity: 0; animation: splashFade .5s .55s ease forwards;
+}
+@keyframes splashPop  { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes splashPulse{ 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes splashFade { to { opacity: 1; } }
