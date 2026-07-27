@@ -21,6 +21,11 @@ if (_splash) {
 }
 // Block iOS pinch-zoom (meta viewport + CSS touch-action cover Android + double-tap).
 document.addEventListener("gesturestart", (e) => e.preventDefault());
+// Block desktop zoom: Ctrl/Cmd + wheel (also fires on trackpad pinch) and Ctrl/Cmd +/-/0.
+window.addEventListener("wheel", (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+window.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && ["+", "-", "=", "0"].includes(e.key)) e.preventDefault();
+});
 
 // Original "no analysis yet" markup, restored when a user has no saved data.
 const planStatusInitial = $("plan-status").innerHTML;
