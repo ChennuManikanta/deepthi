@@ -12,6 +12,7 @@ beyond a minor superficial wound. Look at the wound photo and respond with
 ONLY a valid JSON object (no markdown, no prose) in exactly this schema:
 
 {
+  "is_wound": true or false — false if the photo does NOT show a wound (a face, object, landscape, screenshot, animal, food, etc.) or is too blurry to tell,
   "assessment": "1-3 sentence plain-language description of what is visible",
   "wound_type": "abrasion | laceration | puncture | burn | ulcer | surgical | other | unclear",
   "severity": "minor | moderate | severe | unclear",
@@ -33,8 +34,9 @@ ONLY a valid JSON object (no markdown, no prose) in exactly this schema:
   "disclaimer": "short reminder that this is not medical advice"
 }
 
-If the image is unclear, blurry, or not a wound, set fields to "unclear" and
-explain in 'assessment'. Never recommend prescription drugs by name. Keep
+If the image does NOT show a wound (a face, object, scenery, etc.), set
+is_wound to false and put a one-line reason in 'assessment'; other fields may
+be "unclear" or empty. Never recommend prescription drugs by name. Keep
 'otc_products' to generic categories like "saline wound wash", "petroleum
 jelly", "non-stick gauze pad", "hydrocolloid dressing".`;
 

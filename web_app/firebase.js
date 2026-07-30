@@ -35,6 +35,7 @@ export async function saveAnalysis(plan, meta) {
     woundDay: meta.woundDay ?? null,
     userNotes: meta.userNotes ?? null,
     email: meta.email ?? null,
+    isWound: plan.is_wound ?? null,
     assessment: plan.assessment || "",
     woundType: plan.wound_type || "",
     severity: plan.severity || "",
@@ -65,6 +66,7 @@ export async function loadLatestAnalysis(uid) {
     snap.forEach(child => { d = child.val(); }); // one item due to limitToLast(1)
     if (!d) return null;
     return {
+      is_wound:      d.isWound,
       assessment:    d.assessment,
       wound_type:    d.woundType,
       severity:      d.severity,

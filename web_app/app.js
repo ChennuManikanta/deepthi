@@ -137,11 +137,19 @@ btnAnalyse.addEventListener("click", async () => {
 
   try {
     const plan = await analyseWound(imageDataUrl, notes, day);
-    renderPlan(plan);
-    renderTimeline(plan);
-    saveReminder(plan);
-    $("plan-status").hidden = true;
-    $("plan-actions").hidden = false;
+    if (plan.is_wound === false) {
+      // Not a wound — tell the user, don't render a care plan, but still record it.
+      resetPlanUI();
+      $("plan-status").innerHTML =
+        '<div class="empty-icon">📷</div><h3>That doesn\'t look like a wound</h3>' +
+        '<p>Please upload a clear photo of the wound so I can create a care plan.</p>';
+    } else {
+      renderPlan(plan);
+      renderTimeline(plan);
+      saveReminder(plan);
+      $("plan-status").hidden = true;
+      $("plan-actions").hidden = false;
+    }
     await persistAnalysis(plan, day, notes);
   } catch (e) {
     $("plan-status").innerHTML = `<div class="empty-icon">⚠️</div><h3>AI error</h3><p>${escape(e.message)}</p>`;
@@ -329,6 +337,7 @@ async function restoreUserData(uid) {
   resetPlanUI();
   const plan = await loadLatestAnalysis(uid);
   if (!plan || currentUser?.uid !== uid) return; // ignore if user changed meanwhile
+  if (plan.is_wound === false) return; // last upload wasn't a wound — keep empty state
   renderPlan(plan);
   renderTimeline(plan);
   $("plan-status").hidden = true;
